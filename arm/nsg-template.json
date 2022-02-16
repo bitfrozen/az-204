@@ -2,32 +2,33 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "aks-nsg-name": {
+    "environment": {
       "type": "string",
-      "defaultValue": "iac-dev-aks-nsg",
       "metadata": {
-        "description": "AKS network security group name"
+        "description": "template environment"
       }
     },
-    "agw-nsg-name": {
+    "location": {
       "type": "string",
-      "defaultValue": "iac-dev-agw-nsg",
+      "defaultValue": "[resourceGroup().location]",
       "metadata": {
-        "description": "AGW network security group name"
+        "description": "resource location"
       }
     }
   },
   "functions": [],
   "variables": {
+    "aks-nsg-name": "[concat('iac-', parameters('environment'), '-aks-nsg')]",
+    "agw-nsg-name": "[concat('iac-', parameters('environment'), '-agw-nsg')]",
     "agwSubnetAddressPrefix": "10.112.16.128/25",
     "aksSubnetAddressPrefix": "10.112.0.0/20"
   },
   "resources": [
     {
-      "name": "[parameters('agw-nsg-name')]",
+      "name": "[variables('agw-nsg-name')]",
       "type": "Microsoft.Network/networkSecurityGroups",
       "apiVersion": "2020-11-01",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "properties": {
         "securityRules": [
           {
@@ -76,10 +77,10 @@
       }
     },
     {
-      "name": "[parameters('aks-nsg-name')]",
+      "name": "[variables('aks-nsg-name')]",
       "type": "Microsoft.Network/networkSecurityGroups",
       "apiVersion": "2020-11-01",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "properties": {
         "securityRules": [
           {
