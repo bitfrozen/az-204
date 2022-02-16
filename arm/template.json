@@ -1,0 +1,36 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {},
+  "functions": [],
+  "variables": {
+    "environment": "dev"
+  },
+  "resources": [],
+  "outputs": {
+    "nsgName": {
+      "type": "string",
+      "value": "[concat('iac-', variables('environment'), '-aks-nsg')]"
+    },
+    "location": {
+      "type": "string",
+      "value": "[resourceGroup().location]"
+    },
+    "resource-id": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Network/networkSecurityGroups', 'iac-dev-aks-nsg')]"
+    },
+    "subscription-ida": {
+      "type": "string",
+      "value": "[subscription().subscriptionId]"
+    },
+        "subscription-idb": {
+      "type": "string",
+      "value": "[subscription().id]"
+    },
+    "resource-group": {
+      "type": "string",
+      "value": "[subscriptionResourceId('Microsoft.Resources/resourceGroups','iac-dev-rg')]"
+    }
+  }
+}
