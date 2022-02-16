@@ -41,7 +41,7 @@
               "direction": "Inbound"
             }
           },
-                    {
+          {
             "name": "INT-T80-IN-ALLOW",
             "properties": {
               "description": "",
@@ -55,7 +55,7 @@
               "direction": "Inbound"
             }
           },
-                    {
+          {
             "name": "AKS-T443-OUT-ALLOW",
             "properties": {
               "description": "",
@@ -91,46 +91,6 @@
               "access": "Allow",
               "priority": 100,
               "direction": "Inbound"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "iac-dev-vnet",
-      "type": "Microsoft.Network/virtualNetworks",
-      "apiVersion": "2020-11-01",
-      "location": "[resourceGroup().location]",
-      "dependsOn": [
-        "[resourceId('Microsoft.Network/networkSecurityGroups/', parameters('aks-nsg-name'))]",
-        "[resourceId('Microsoft.Network/networkSecurityGroups/', parameters('agw-nsg-name'))]"
-      ],
-      "tags": {
-        "displayName": "iac-dev-vnet"
-      },
-      "properties": {
-        "addressSpace": {
-          "addressPrefixes": [
-            "10.112.0.0/16"
-          ]
-        },
-        "subnets": [
-          {
-            "name": "aks-net",
-            "properties": {
-              "addressPrefix": "10.112.0.0/20",
-              "networkSecurityGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('aks-nsg-name'))]"
-              }
-            }
-          },
-          {
-            "name": "agw-net",
-            "properties": {
-              "addressPrefix": "10.112.16.128/25",
-              "networkSecurityGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('agw-nsg-name'))]"
-              }
             }
           }
         ]
