@@ -1,0 +1,25 @@
+rg_prod="iac-prod-rg"
+rg_dev="iac-dev-rg"
+rg_dash="iac-dashboards"
+location="eastus"
+
+# Check current account
+az account show
+
+# Create resource groups
+az group create -n $rg_dev -l $location --tags project=iac env=dev description="resources for dev environment"
+az group create -n $rg_prod -l $location --tags project=iac env=prod description="resources for production environment"
+az group create -n $rg_dash -l $location --tags project=iac description="container for shared dashboards"
+
+# Create dashboard (looks like you can't create private dashboards using ARM, so this will create a shared dashboard in a separate rg)
+az deployment group create --resource-group $rg_dash --template-file dashboard.json
+
+# Validate deployment on group
+az deployment group validate --resource-group $rg_dev --template-file template.json --output table
+# Create deployment for group
+az deployment group create --resource-group $rg_dev --template-file template.json --name empty-template-$(date --utc +%F-%H-%M-%SZ) --output table
+# Check current deployments
+az deployment group list --resource-group $rg_dev --output table
+
+# Cleanup created groups
+az group list --query "[? contains(name,'iac')]".name -o tsv | xargs -otl az group delete -y --no-wait -n
