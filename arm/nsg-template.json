@@ -18,7 +18,10 @@
     }
   },
   "functions": [],
-  "variables": {},
+  "variables": {
+    "agwSubnetAddressPrefix": "10.112.16.128/25",
+    "aksSubnetAddressPrefix": "10.112.0.0/20"
+  },
   "resources": [
     {
       "name": "[parameters('agw-nsg-name')]",
@@ -35,7 +38,7 @@
               "sourcePortRange": "*",
               "destinationPortRange": "443",
               "sourceAddressPrefix": "Internet",
-              "destinationAddressPrefix": "10.112.16.128/25",
+              "destinationAddressPrefix": "[variables('agwSubnetAddressPrefix')]",
               "access": "Allow",
               "priority": 100,
               "direction": "Inbound"
@@ -49,7 +52,7 @@
               "sourcePortRange": "*",
               "destinationPortRange": "80",
               "sourceAddressPrefix": "Internet",
-              "destinationAddressPrefix": "10.112.16.128/25",
+              "destinationAddressPrefix": "[variables('agwSubnetAddressPrefix')]",
               "access": "Allow",
               "priority": 101,
               "direction": "Inbound"
@@ -62,8 +65,8 @@
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "destinationPortRange": "443",
-              "sourceAddressPrefix": "10.112.16.128/25",
-              "destinationAddressPrefix": "10.112.0.0/20",
+              "sourceAddressPrefix": "[variables('agwSubnetAddressPrefix')]",
+              "destinationAddressPrefix": "[variables('aksSubnetAddressPrefix')]",
               "access": "Allow",
               "priority": 102,
               "direction": "Outbound"
@@ -86,8 +89,8 @@
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "destinationPortRange": "443",
-              "sourceAddressPrefix": "10.112.16.128/25",
-              "destinationAddressPrefix": "10.112.0.0/20",
+              "sourceAddressPrefix": "[variables('agwSubnetAddressPrefix')]",
+              "destinationAddressPrefix": "[variables('aksSubnetAddressPrefix')]",
               "access": "Allow",
               "priority": 100,
               "direction": "Inbound"
