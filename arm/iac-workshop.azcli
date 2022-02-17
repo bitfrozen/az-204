@@ -26,7 +26,7 @@ az deployment group create --name vnet-template-$(date --utc +%F%H%M%SZ) --resou
 # Check current deployments
 az deployment group list --resource-group $rg_dev --output table
 
-
+az deployment group create --parameters az-204.json --parameters
 
 # Cleanup created groups
 az group list --query "[? contains(name,'iac')]".name -o tsv | xargs -otl az group delete -y --no-wait -n
