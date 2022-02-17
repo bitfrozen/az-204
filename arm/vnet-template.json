@@ -2,54 +2,72 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "aks-nsg-name": {
-      "type": "string",
-      "defaultValue": "iac-dev-aks-nsg",
-      "metadata": {
-        "description": "AKS network security group name"
-      }
+    "environment": {
+      "type": "string"
     },
-    "agw-nsg-name": {
+    "location": {
       "type": "string",
-      "defaultValue": "iac-dev-agw-nsg",
-      "metadata": {
-        "description": "AGW network security group name"
-      }
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "resourceNamePrefix": {
+      "type": "string"
+    },
+    "agwNsgNameSuffix": {
+      "type": "string"
+    },
+    "aksNsgNameSuffix": {
+      "type": "string"
+    },
+    "agwSubnetAddressPrefix": {
+      "type": "string"
+    },
+    "aksSubnetAddressPrefix": {
+      "type": "string"
+    },
+    "vnetAddressPrefix": {
+      "type": "string"
+    },
+    "vnetNameSuffix": {
+      "type": "string"
     }
   },
   "functions": [],
-  "variables": {},
+  "variables": {
+    "vnet-name": "[concat(parameters('resourceNamePrefix'), '-', parameters('environment'), '-', parameters('vnetNameSuffix'))]",
+    "aks-nsg-name": "[concat(parameters('resourceNamePrefix'), '-', parameters('environment'), '-', parameters('aksNsgNameSuffix'))]",
+    "agw-nsg-name": "[concat(parameters('resourceNamePrefix'), '-', parameters('environment'), '-', parameters('agwNsgNameSuffix'))]"
+  },
   "resources": [
     {
-      "name": "iac-dev-vnet",
+      "name": "[variables('vnet-name')]",
       "type": "Microsoft.Network/virtualNetworks",
       "apiVersion": "2020-11-01",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "tags": {
-        "displayName": "iac-dev-vnet"
+        "displayName": "[variables('vnet-name')]"
       },
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
-            "10.112.0.0/16"
+            "[parameters('vnetAddressPrefix')]"
           ]
         },
         "subnets": [
           {
             "name": "aks-net",
             "properties": {
-              "addressPrefix": "10.112.0.0/20",
+              "addressPrefix": "[parameters('aksSubnetAddressPrefix')]",
               "networkSecurityGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('aks-nsg-name'))]"
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('aks-nsg-name'))]"
               }
             }
           },
           {
             "name": "agw-net",
             "properties": {
-              "addressPrefix": "10.112.16.128/25",
+              "addressPrefix": "[parameters('agwSubnetAddressPrefix')]",
               "networkSecurityGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('agw-nsg-name'))]"
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('agw-nsg-name'))]"
               }
             }
           }
