@@ -5,19 +5,30 @@ IFS=$'\n\t'
 # More: http://redsymbol.net/articles/unofficial-bash-strict-mode/
 
 # Setup default values
-declare environment="DEV"
+declare environment="dev"
 declare template_filename="nsg-template.json"
+declare parameter_filename=
 
-function usage {
-     echo "Usage $0 [-h] [-e environment default=$environment] [-f template-filename default=$template_filename]" 1>&2; exit 1;
+function parameter_filename() {
+  if [[ -z "$parameter_filename" ]]; then
+    echo "parameters-$environment.json"
+  else
+    echo $parameter_filename
+  fi
 }
 
-while getopts ":he:f:" opt; do
+function usage {
+     echo "Usage $0 [-h] [-e environment default=$environment] [-t template-filename default=$template_filename] [-p parameter-filename default=$(parameter_filename)]" 1>&2; exit 1;
+}
+
+while getopts ":he:t:p:" opt; do
   case ${opt} in
     h ) usage; exit;;
     e ) environment="$OPTARG"
       ;;
-    f ) template_filename="$OPTARG"
+    t ) template_filename="$OPTARG"
+      ;;
+    p ) parameter_filename="$OPTARG"
       ;;
     \? ) echo "Unknown option: -$OPTARG" >&2; exit 1;;
     :  ) echo "Missing option argument for -$OPTARG" >&2; exit 1;;
@@ -26,4 +37,4 @@ while getopts ":he:f:" opt; do
 done
 shift $((OPTIND - 1))
 
-./validate.sh -e "$environment" -f "$template_filename"
+./validate.sh -e "$environment" -t "$template_filename" -p "$(parameter_filename)"

@@ -5,19 +5,16 @@ IFS=$'\n\t'
 # More: http://redsymbol.net/articles/unofficial-bash-strict-mode/
 
 # Setup default values
-declare environment="dash"
-declare template_filename="dashboard-template.json"
+declare environment="dev"
 
 function usage {
-     echo "Usage $0 [-h] [-e environment default=$environment] [-t template-filename default=$template_filename]" 1>&2; exit 1;
+     echo "Usage $0 [-h] [-e environment default=$environment]" 1>&2; exit 1;
 }
 
-while getopts ":he:t:" opt; do
+while getopts ":he:" opt; do
   case ${opt} in
     h ) usage; exit;;
     e ) environment="$OPTARG"
-      ;;
-    t ) template_filename="$OPTARG"
       ;;
     \? ) echo "Unknown option: -$OPTARG" >&2; exit 1;;
     :  ) echo "Missing option argument for -$OPTARG" >&2; exit 1;;
@@ -26,4 +23,5 @@ while getopts ":he:t:" opt; do
 done
 shift $((OPTIND - 1))
 
-./deploy.sh -e "$environment" -t "$template_filename"
+./nsg-validate.sh -e "$environment"
+./vnet-validate.sh -e "$environment"
