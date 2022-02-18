@@ -13,7 +13,7 @@ param (
   $TemplateFilePath = "template.json",
 
   [string]
-  $ParametersFilePath = "template.parameters.json",
+  $ParametersFilePath,
 
   [ValidateSet(
     "dev",
@@ -26,7 +26,7 @@ param (
 $ErrorActionPreference = "Stop"
 #Requires -Modules Az.Resources
 
-#Create or check for existing resource group
+# Create or check for existing resource group
 $ResourceGroup = Get-AzResourceGroup -Name $ResourceGroupName -ErrorAction SilentlyContinue
 if (!$ResourceGroup) {
   Write-Output "Resource group '$ResourceGroupName' does not exist.";

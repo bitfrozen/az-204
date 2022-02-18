@@ -2,23 +2,13 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "storageAccountPrefix": {
+    "projectName": {
       "type": "string",
-      "defaultValue": "savm",
       "minLength": 3,
-      "maxLength": 11
-    },
-    "servicePlanPrefix": {
-      "type": "string",
-      "defaultValue": "wbsvf",
-      "minLength": 3,
-      "maxLength": 11
-    },
-    "webappPrefix": {
-      "type": "string",
-      "defaultValue": "wapp",
-      "minLength": 3,
-      "maxLength": 11
+      "maxLength": 11,
+      "metadata": {
+        "description": "Specify a project name that is used to generate resource names."
+      }
     },
     "linuxFxVersion": {
       "type": "string",
@@ -55,9 +45,9 @@
   },
   "functions": [],
   "variables": {
-    "storageAccountName": "[concat(parameters('storageAccountPrefix'), uniqueString(resourceGroup().id))]",
-    "servicePlanName": "[concat(parameters('servicePlanPrefix'), uniqueString(resourceGroup().id))]",
-    "webappPortalName": "[concat(parameters('webappPrefix'), uniqueString(resourceGroup().id))]",
+    "storageAccountName": "[concat(parameters('projectName'), uniqueString(resourceGroup().id))]",
+    "servicePlanName": "[concat(parameters('projectName'), 'Plan')]",
+    "webappPortalName": "[concat(parameters('projectName'), 'WebApp')]",
     "linuxFxVersion": "[parameters('linuxFxVersion')]",
     "storageSKU": "[parameters('storageSKU')]",
     "location": "[parameters('location')]",

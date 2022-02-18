@@ -2,17 +2,11 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "storageAccountPrefix": {
-      "value": "devstore"
+    "projectName": {
+      "value": "devapp"
     },
     "storageSKU": {
       "value": "Standard_LRS"
-    },
-    "servicePlanPrefix": {
-      "value": "devplan"
-    },
-    "webappPrefix": {
-      "value": "devapp"
     },
     "resourceTags": {
       "value": {
