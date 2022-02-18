@@ -1,12 +1,6 @@
 [CmdletBinding()]
 param (
   [string]
-  $ResourceGroupName = "rg-msl-dev-eu",
-
-  [string]
-  $ResourceGroupLocation = "eastus",
-
-  [string]
   $DeploymentName,
 
   [string]
@@ -23,26 +17,18 @@ param (
   $Environment = "dev"
 )
 
+. ./env.ps1
+
 $ErrorActionPreference = "Stop"
 #Requires -Modules Az.Resources
-
-# Create or check for existing resource group
-$ResourceGroup = Get-AzResourceGroup -Name $ResourceGroupName -ErrorAction SilentlyContinue
-if (!$ResourceGroup) {
-  Write-Output "Resource group '$ResourceGroupName' does not exist.";
-  Write-Output "Creating resource group '$ResourceGroupName' in location '$ResourceGroupLocation'";
-  New-AzResourceGroup -Name $ResourceGroupName -Location $ResourceGroupLocation
-} else {
-  Write-Output "Using existing resource group '$ResourceGroupName'";
-}
 
 # Start the deployment
 Write-Output "Starting deployment...";
 
 if (Test-Path $ParametersFilePath) {
-  $Output = New-AzResourceGroupDeployment -ResourceGroupName $ResourceGroupName -TemplateFile $TemplateFilePath -TemplateParameterFile $ParametersFilePath;
+  $Output = New-AzResourceGroupDeployment -ResourceGroupName $ResourceGroupName[$Environment] -TemplateFile $TemplateFilePath -TemplateParameterFile $ParametersFilePath;
 } else {
-  $Output = New-AzResourceGroupDeployment -ResourceGroupName $ResourceGroupName -TemplateFile $TemplateFilePath;
+  $Output = New-AzResourceGroupDeployment -ResourceGroupName $ResourceGroupName[$Environment] -TemplateFile $TemplateFilePath;
 }
 
 # Are Azure Response strings the same across regions/cultures?
