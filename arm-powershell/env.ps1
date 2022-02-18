@@ -1,5 +1,5 @@
 Write-Output "Loading environment variables ..."
-$ProjectName = 'mslearn'
+$ProjectName = 'msl5g331'
 $Location = 'eastus'
 $ResourceGroupName = @{
   Dev  = 'rg-msl-dev-eu';
@@ -7,7 +7,7 @@ $ResourceGroupName = @{
 }
 
 $TemplateResourceGroupName = $ProjectName + '-repo'
-$TemplateStorageAccountName = $ProjectName + 'templstore5g331'
+$TemplateStorageAccountName = $ProjectName + 'tmplstore'
 $TemplateContainerName = 'templates'
 
 Write-Output "Finished loading environment variables"

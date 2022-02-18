@@ -1,14 +1,5 @@
 [CmdletBinding()]
 param (
-  [string]
-  $DeploymentName,
-
-  [string]
-  $TemplateFilePath = "template.json",
-
-  [string]
-  $ParametersFilePath,
-
   [ValidateSet(
     "dev",
     "prod"
@@ -22,14 +13,26 @@ param (
 $ErrorActionPreference = "Stop"
 #Requires -Modules Az.Resources
 
-# Start the deployment
-Write-Output "Starting deployment...";
+# Authorize
+$key = (Get-AzStorageAccountKey -ResourceGroupName $TemplateResourceGroupName -Name $TemplateStorageAccountName).Value[0]
+$context = New-AzStorageContext -StorageAccountName $TemplateStorageAccountName -StorageAccountKey $key
 
-if (Test-Path $ParametersFilePath) {
-  $Output = New-AzResourceGroupDeployment -ResourceGroupName $ResourceGroupName[$Environment] -TemplateFile $TemplateFilePath -TemplateParameterFile $ParametersFilePath;
-} else {
-  $Output = New-AzResourceGroupDeployment -ResourceGroupName $ResourceGroupName[$Environment] -TemplateFile $TemplateFilePath;
-}
+$mainTemplateUri = $context.BlobEndPoint + "$TemplateContainerName/azuredeploy.json"
+$sasToken = New-AzStorageContainerSASToken `
+    -Context $context `
+    -Container $TemplateContainerName `
+    -Permission r `
+    -ExpiryTime (Get-Date).AddHours(2.0)
+$newSas = $sasToken.substring(1)
+
+Write-Output "Starting deployment...";
+$Output = New-AzResourceGroupDeployment `
+  -Name DeployLinkedTemplate `
+  -ResourceGroupName $ResourceGroupName[$Environment] `
+  -TemplateUri $mainTemplateUri `
+  -QueryString $newSas `
+  -projectName $ProjectName `
+  -verbose
 
 # Are Azure Response strings the same across regions/cultures?
 if ($Output.ProvisioningState -eq "Succeeded") {
