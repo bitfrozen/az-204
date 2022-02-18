@@ -57,7 +57,7 @@ $TemplateFiles = @{
   'storage' = 'linkedStorageAccount.json'
 }
 
-# Upload the templates
+Write-Output "Uploading main template file $($TemplateFiles.main)";
 Set-AzStorageBlobContent `
   -Container $TemplateContainerName `
   -File $TemplateFiles['main'] `
@@ -65,7 +65,7 @@ Set-AzStorageBlobContent `
   -Context $context `
   -Force
 
-
+Write-Output "Uploading storage template file $($TemplateFiles.storage)";
 Set-AzStorageBlobContent `
   -Container $TemplateContainerName `
   -File $TemplateFiles['storage'] `
