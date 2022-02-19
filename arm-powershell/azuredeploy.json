@@ -91,6 +91,10 @@
     "storageEndpoint": {
       "type": "object",
       "value": "[reference('linkedTemplate').outputs.storageEndpoint.value]"
+    },
+    "webappEndpoint": {
+      "type": "string",
+      "value": "[reference(variables('webAppName')).defaultHostName]"
     }
   }
 }
