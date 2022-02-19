@@ -10,10 +10,16 @@ pool:
   name: studio
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
-
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+  - task: AzureResourceManagerTemplateDeployment@3
+    inputs:
+      deploymentScope: 'Resource Group'
+      azureResourceManagerConnection: 'BitFrozen Azure'
+      subscriptionId: '4c367f27-b103-4970-90a6-321257fab178'
+      action: 'Create Or Update Resource Group'
+      resourceGroupName: 'rg-mslrn-pipes-eu'
+      location: 'East US'
+      templateLocation: 'URL of the file'
+      csmFileLink: 'https://raw.githubusercontent.com/bitfrozen/az-204/main/arm-pipelines/azuredeploy.json'
+      overrideParameters: '-projectName prj5581'
+      deploymentMode: 'Incremental'
+      deploymentName: 'DeployPipelineTemplate'
