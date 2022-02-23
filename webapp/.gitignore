@@ -4,3 +4,5 @@
 **/obj/
 /WebApp/BasicSite/Properties/
 azuredeploy.json
+/WebApp/publish/
+*.csproj.user
