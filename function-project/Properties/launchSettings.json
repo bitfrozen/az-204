@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "function_project": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7143",
+      "launchBrowser": false
+    }
+  }
+}

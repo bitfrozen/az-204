@@ -1,3 +1,4 @@
 az group create --name rg-mslearn-eu --location eastus
 az deployment group create --resource-group rg-mslearn-eu --template-file azuredeploy-depend.json --parameters azuredeploy-depend.parameters.json
 az group delete --name rg-mslearn-eu
+az network vnet-gateway create --resource-group test-sub-rg -n test-vnet-gate --gateway-type vpn --vnet test-vnet --sku Basic --vpn-type RouteBased --public-ip-address MyGatewayIp

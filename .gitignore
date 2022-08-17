@@ -1,1 +1,9 @@
 arm-advanced/azuredeploy-depend.parameters.json
+**/.vs
+**/.idea
+**/.vscode
+**/obj
+**/bin
+*.zip
+*.DotSettings.user
+/Labs/
