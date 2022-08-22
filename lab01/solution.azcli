@@ -21,11 +21,13 @@ $webapp="imgweb3344";
 az group create --location $location --name $group
 # powershell
 New-AzResourceGroup -Name $group -Location $location
+
 ### Create storage account
 # az cli
 az storage account create --resource-group $group --location $location --name $storagename --sku Standard_LRS --kind StorageV2 --min-tls-version TLS1_2 --https-only
 # powershell
 New-AzStorageAccount -ResourceGroupName $group -SkuName Standard_LRS -Location $location -Name $storagename -Kind StorageV2
+
 ### Get storage account access inforamation
 # az cli
 az storage account keys list --account-name $storagename
@@ -33,33 +35,39 @@ az storage account show-connection-string --name $storagename --key primary
 # powershell
 Get-AzStorageAccountKey -Name $storagename -ResourceGroupName $group
 --
+
 ### Delete resource group
 # az cli
 az group delete --name $group
 # powershell
 Remove-AzResourceGroup -Name $group
+
 ### Create storage container
 # az cli
 az storage container create --account-name $storagename --name $containername --public-access blob
 # powershell
 $ctx = New-AzStorageContext -UseConnectedAccount -StorageAccountName $storagename
 New-AzStorageContainer -Name $containername -Context $ctx -Permission Blob
+
 ### Upload file (blob)
 # az cli
 az storage blob upload --account-name $storagename --container-name $containername --file "Images/grilledcheese.jpg"
 # powershell
 $ctx = New-AzStorageContext -UseConnectedAccount -StorageAccountName $storagename
 Set-AzStorageBlobContent -Context $ctx -Container $containername -StandardBlobTier 'Hot' -File "Images/grilledcheese.jpg" -Blob "grilledcheese.jpg"
+
 ### Create app service plan
 # az cli
 az appservice plan create --resource-group $group --name $serviceplan --location $location --sku F1
 # powershell
 New-AzAppServicePlan -ResourceGroupName $group -Name $serviceplan -Location $location -Tier Standard -WorkerSize Small -NumberofWorkers 1 -PerSiteScaling $true
+
 ### Create webapi app
 # az cli
 az webapp create --resource-group $group --name $webapi --plan $serviceplan --runtime "DOTNETCORE:6.0"
 # powershell
 New-AzWebApp -ResourceGroupName $group -AppServicePlan $serviceplan -Name $webapi
+
 ### Set webapi settings
 # az cli
 az webapp config appsettings set -g $group -n $webapp --settings StorageConnectionString=$(az storage account show-connection-string -g $group -n $storagename -o tsv)
@@ -69,11 +77,13 @@ $accessKey = (Get-AzStorageAccountKey -Name $storagename -ResourceGroupName $gro
 $connectionString = "DefaultEndpointsProtocol=https;EndpointSuffix=core.windows.net;AccountName=$storagename;AccountKey=$accessKey;"
 $appSettings = @{ StorageConnectionString=$connectionString}
 Set-AzWebApp -ResourceGroupName $group -Name $webapp -AppSettings ($appSettings)
+
 ### Get webapi app url
 # az cli
 az webapp show -g $group -n $webapp --query defaultHostName -o tsv
 # powershell
 (Get-AzWebApp -ResourceGroupName $group -Name $webapp).DefaultHostName
+
 ### Deploy webapi app
 # az cli
 # view deployment options
@@ -87,6 +97,7 @@ az webapp deploy --resource-group $group --name $webapi --type zip --src-path "a
 Get-AzWebAppPublishingProfile -ResourceGroupName $group -Name $webapi
 # perform deployment
 Publish-AzWebApp -ResourceGroupName $group -Name $webapi -ArchivePath "api.zip"
+
 ### Change dotnet stack version for webapp
 az webapp config set --resource-group $group --name $webapi --linux-fx-version "DOTNETCORE|6.0"
 ### Deploy webapp app (frontend)

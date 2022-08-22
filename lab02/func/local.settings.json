@@ -1,0 +1,8 @@
+{
+  "IsEncrypted": true,
+  "Values": {
+    "AzureWebJobsStorage": "CfDJ8Ne3Qu0J5RRIgG/As5W3C2IWcG6ob2tqmIjrE3s6pwhx9ccjMHJcQGPsFsPR4BKh4r1rb4s41Tbo0o8XX38u8GIOS7AY84569h62RrQ+T5Q/zuJvvlkBYiGzsbscBXKr7jUmkf/xpZJCZiDZduVR6J4rIj8+braL49HqQ5WnGe/hCy9q7HCVDWT4/Vl18foD1rHSXNumpDAuSLzOctg6F6YfcUnzWUxxp65LVUXCIJaO89BcYRoe0071qbQrSixiwKlPncp6UXoke9lhdUxOHc6ND1VIz8B/KYMJ9inhCFezP9IEnbmgRlYYqNSlUr6IhKEd0+/vU0l5JufDWKtCjbosDZt1p0mmyHeHWml0cclN",
+    "FUNCTIONS_WORKER_RUNTIME": "CfDJ8Ne3Qu0J5RRIgG/As5W3C2IZSX0nhsdBUrdV9ulsnRHsQWune1WwIzEK1o+2DTsTTlWHyp7N3860wFdOVQAtd8iTXYWqqu0E1Jxh5mHZ6Sdw2A61yg3IHT7qPrfwHU5X6g=="
+  },
+  "ConnectionStrings": {}
+}

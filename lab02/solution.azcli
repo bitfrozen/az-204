@@ -1,0 +1,54 @@
+# Set bash variables
+location="eastus2" &&
+group="serverless" &&
+storagename="funcstor3344" &&
+containername="content" &&
+funcname="funclogic3344"
+
+# Set powershell variables
+$location="eastus2";
+$group="serverless";
+$storagename="funcstor3344";
+$containername="";
+$funcname="funclogic3344";
+
+### Create resource group
+az group create --name $group --location $location
+
+### Create storage account
+az storage account create --resource-group $group --name $storagename --location $location --sku Standard_LRS --kind StorageV2 --min-tls-version TLS1_2 --https-only
+
+### Create blob container
+az storage container create --resource-group $group --name $containername --account-name $storagename --public-access off
+
+### Upload file to container
+az storage blob upload --account-name $storagename --container-name $containername --file settings.json --overwrite
+
+### Create function app
+az functionapp create --name $funcname \
+                      --resource-group $group \
+                      --consumption-plan-location $location \
+                      --os-type Windows \
+                      --runtime dotnet \
+                      --runtime-version "6" \
+                      --storage-account $storagename \
+                      --functions-version 4
+az functionapp config set --name $funcname --resource-group $group --net-framework-version 6.0
+
+# Testing API using httprepl on local machine
+## Setup functions (add storage connection string)
+func settings add "AzureWebJobsStorage" "<connection-string-for-storage>"
+func settings encrypt
+func start --verbose --functions Echo GetSettingInfo
+
+httprepl.exe http://localhost:7071
+
+cd api/echo
+post --content "Heelo You"
+cd ../getsettinginfo
+get
+
+# Publishing function app using func tools
+func azure functionapp publish $funcname
+
+az group delete -g $group -y
