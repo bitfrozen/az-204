@@ -1,0 +1,35 @@
+# Set bash variables
+location="eastus2" &&
+group="StorageMedia" &&
+storagename="mediastor3344" &&
+containernameaudio="compressed-audio" &&
+containernameraster="raster-graphics" &&
+containernamegraphics="vector-graphics"
+
+# Set powershell variables
+$location="eastus2";
+$group="StorageMedia";
+$storagename="mediastor3344";
+$containernameaudio="compressed-audio";
+$containernameraster="raster-graphics";
+$containernamegraphics="vector-graphics";
+
+# Create resource group
+az group create --name $group --location $location
+# Create storage account
+az storage account create --name $storagename --resource-group $group --https-only --kind StorageV2 --min-tls-version TLS1_2 --sku Standard_LRS
+# Get blob endpoint
+az storage account show --resource-group $group --name $storagename --query primaryEndpoints.blob -o tsv
+# Get storage account key
+az storage account keys list --account-name $storagename --query [0].value -o tsv
+# Create containers
+az storage container create --account-name $storagename --resource-group $group --name $containernameraster --public-access off
+az storage container create --account-name $storagename --resource-group $group --name $containernameaudio --public-access off
+# Upload file
+az storage blob upload --account-name $storagename --container-name $containernameraster --file graph.jpg --overwrite
+blooming-green-223-HORSE
+# Run application to create `vector` container
+# Upload file
+az storage blob upload --account-name $storagename --container-name $containernamegraphics --file graph.svg
+# Delete resource group
+az group delete --resource-group $group --yes

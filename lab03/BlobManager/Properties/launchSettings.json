@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "BlobManager": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "BLOBMNGR_STORAGEACCOUNTKEY": ""
+      }
+    }
+  }
+}
