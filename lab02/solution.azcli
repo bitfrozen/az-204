@@ -14,9 +14,11 @@ $funcname="funclogic3344";
 
 ### Create resource group
 az group create --name $group --location $location
+New-AzResourceGroup -Location $location -Name $group
 
 ### Create storage account
 az storage account create --resource-group $group --name $storagename --location $location --sku Standard_LRS --kind StorageV2 --min-tls-version TLS1_2 --https-only
+New-AzStorageAccount -ResourceGroupName $group -Name $storagename -Location $location -SkuName Standard_LRS -MinimumTlsVersion TLS1_2 -EnableHttpsTrafficOnly $true
 
 ### Create blob container
 az storage container create --resource-group $group --name $containername --account-name $storagename --public-access off
@@ -35,6 +37,11 @@ az functionapp create --name $funcname \
                       --functions-version 4
 az functionapp config set --name $funcname --resource-group $group --net-framework-version 6.0
 
+New-AzFunctionApp -Name $funcname -ResourceGroupName $group -Location $location -Runtime DotNet -RuntimeVersion 6 -FunctionsVersion 4 -OSType Windows -StorageAccountName $storagename
+# For some reason modifying function settings with Update-AzFunctionApp doesn't work. Using generic AzResource version
+$func = Get-AzResource -ResourceGroupName $group -Name $funcname -ResourceType "Microsoft.Web/sites/config" -ApiVersion "2021-02-01"
+$func.Properties.netFrameworkVersion="6.0"
+Set-AzResource -ResourceId $func.ResourceId -Properties $func.Properties
 # Testing API using httprepl on local machine
 ## Setup functions (add storage connection string)
 func settings add "AzureWebJobsStorage" "<connection-string-for-storage>"
