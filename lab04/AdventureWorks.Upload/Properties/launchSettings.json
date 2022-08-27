@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "AdventureWorks.Upload": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "Adv_AuthorizationKey": ""
+      }
+    }
+  }
+}
