@@ -1,0 +1,33 @@
+# Set bash variables
+location="eastus2" &&
+group="Polyglotdata" &&
+storagename="polystor3344" &&
+containername="images" &&
+cosmosname="polycosmos3344"
+
+
+# Set powershell variables
+$location="eastus2";
+$group="Polyglotdata";
+$storagename="polystor3344";
+containername="images";
+$cosmosname="polycosmos3344";
+
+
+# Create resource group
+az group create --name $group --location $location
+# Create storage account
+az storage account create --name $storagename --resource-group $group --location $location --kind StorageV2 --sku Standard_LRS --min-tls-version TLS1_2 --https-only true
+# Create blob container
+az storage container create --account-name $storagename --resource-group $group --name $containername --public-access blob
+# Get blob endpoint
+az storage account show --name $storagename --query primaryEndpoints.blob -o tsv
+# Batch upload images to storage
+az storage blob upload-batch --account-name $storagename --destination $containername --source ../Images/
+# Create Cosmos DB
+az cosmosdb create --name $cosmosname --resource-group $group --locations regionName=$location failoverPriority=0 isZoneRedundant=False --kind GlobalDocumentDB --enable-free-tier
+# Get primary connection string
+az cosmosdb keys list --name $cosmosname --resource-group $group --type connection-strings --query connectionStrings[0].connectionString -o tsv
+
+
+az group delete --resource-group $group --yes
