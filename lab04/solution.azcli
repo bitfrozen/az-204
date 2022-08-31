@@ -26,11 +26,12 @@ az storage account show --name $storagename --query primaryEndpoints.blob -o tsv
 az storage blob upload-batch --account-name $storagename --destination $containername --source ../Images/
 # Create Cosmos DB
 az cosmosdb create --name $cosmosname --resource-group $group --locations regionName=$location failoverPriority=0 isZoneRedundant=False --kind GlobalDocumentDB --enable-free-tier
-# Get primary connection string
-az cosmosdb keys list --name $cosmosname --resource-group $group --type connection-strings --query connectionStrings[0].connectionString -o tsv
-# Get Cosmos account endpoint
+# Get Cosmos DB account URI
 az cosmosdb show --name $cosmosname --resource-group $group --query documentEndpoint -o tsv
-# Get cosmos primary key
+# Get primary read-write master key
+az cosmosdb keys list --name $cosmosname --resource-group $group --query primaryMasterKey -o tsv
+# Get primary read-write connection string
+az cosmosdb keys list --name $cosmosname --resource-group $group --type connection-strings --query connectionStrings[0].connectionString -o tsv
 
-
+# Remove resource group
 az group delete --resource-group $group --yes
