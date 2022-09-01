@@ -14,6 +14,9 @@ namespace AdventureWorks.Web
 			// Bind Settings
 			builder.Services.Configure<SettingsOptions>(
 				builder.Configuration.GetSection(SettingsOptions.Settings));
+			// To setup connection string for Cosmos DB use either user secret method or setup
+			// environment variable CosmosSettings__ConnectionString
+			// (Note the double underscore)
 			builder.Services.Configure<CosmosOptions>(
 				builder.Configuration.GetSection(CosmosOptions.CosmosSettings));
 			builder.Services.AddScoped<IAdventureWorksProductContext, AdventureWorksCosmosContext>();

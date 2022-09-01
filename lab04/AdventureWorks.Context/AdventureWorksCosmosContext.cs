@@ -16,7 +16,7 @@ namespace AdventureWorks.Context
 		{
 			_logger = logger;
 			_cosmosOptions = options.Value;
-			_logger.LogWarning("Using connection string {ConnectionString}", _cosmosOptions.ConnectionString);
+			_logger.LogWarning("Creating Cosmos client");
 			_container = new CosmosClient(_cosmosOptions.ConnectionString)
 				.GetDatabase(_cosmosOptions.DatabaseName)
 				.GetContainer(_cosmosOptions.ContainerName);
