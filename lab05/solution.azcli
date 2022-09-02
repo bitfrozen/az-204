@@ -1,0 +1,70 @@
+# Set bash variables
+location="eastus2" &&
+group="ContainerCompute" &&
+vmname="quickvm" &&
+registryName="conregistry3344" &&
+publicKeyValue="" &&
+privateKey=""
+
+# Set powershell variables
+$location="eastus2";
+$group="ContainerCompute";
+$vmname="quickvm";
+$publicKeyValue="";
+$registryName="conregistry3344";
+$publicKeyValue="";
+$privateKey="";
+
+# Create resource group
+az group create --name $group --location $location
+# Create VM
+az vm create \
+  --resource-group $group \
+  --name $vmname \
+  --image Debian \
+  --public-ip-sku Basic \
+  --size Standard_B1ls \
+  --storage-sku StandardSSD_LRS \
+  --admin-username student \
+  --ssh-key-values $publicKeyValue
+# Get VM info
+az vm show --resource-group $group --name $vmname
+# Show IPs associated with VM
+az vm list-ip-addresses --resource-group $group --name $vmname
+# Get first public IP address
+ipAddress=$(az vm list-ip-addresses \
+  --resource-group $group \
+  --name $vmname \
+  --query [].virtualMachine.network.publicIpAddresses[0].ipAddress \
+  --output tsv)
+# SSH into VM
+ssh -i $privateKey student@$ipAddress
+exit
+# Create dotnet project
+mkdir ipcheck; cd ipcheck
+dotnet new console --output . --name ipcheck --framework net6.0
+ni Dockerfile
+# Create container registry
+az acr check-name --name $registryName
+az acr create --resource-group $group --name $registryName --sku Basic
+# Get list of container registries sorted by creation date
+az acr list --query "max_by([], &creationDate).name" -o tsv
+# Build docker image using container registry agent
+az acr build --registry $registryName --image ipcheck:latest .
+# Enable admin user for container registry
+az acr update --admin-enabled --resource-group $group --name $registryName
+# Run ipcheck container from inside container registry
+az acr run --resource-group $group --registry $registryName --platform linux --cmd "$registryName.azurecr.io/ipcheck:latest" /dev/null
+# Run ipcheck container as new container instance
+az container create \
+  --resource-group $group \
+  --name clicompute \
+  --image $registryName.azurecr.io/ipcheck:latest \
+  --registry-username $registryName \
+  --registry-password $(az acr credential show --resource-group $group --name $registryName --query passwords[0].value -o tsv) \
+  --cpu 1 \
+  --memory 1 \
+  --os-type Linux \
+  --restart-policy Never
+# Remove resource group
+az group delete --resource-group $group --yes
