@@ -1,0 +1,60 @@
+# Set bash variables
+location="eastus2" &&
+group="ContainerCompute" &&
+applicationName="webappoidc"
+
+# Set powershell variables
+$location="eastus2";
+$group="ContainerCompute";
+$applicationName="webappoidc";
+
+# Create application registration (single tenant)
+az ad app create --display-name $applicationName --sign-in-audience AzureADMyOrg
+# Get Application (client) ID (Note: display name is not unique, so it's possible that app id you'll get won't be the app id you expect)
+az ad app list --display-name $applicationName --query [0].appId -o tsv
+# Get object id
+az ad app list --display-name $applicationName --query [0].id -o tsv
+# Get Tenant Id for created application
+az rest --url "https://graph.microsoft.com/beta/tenantRelationships/findTenantInformationByDomainName(domainName='$(az ad app list --display-name $applicationName --query [0].publisherDomain -o tsv)')" --query tenantId -o tsv
+# Get verified domain
+az ad app list --display-name $applicationName --query [0].publisherDomain -o tsv
+# Add application authentication settings for web platform
+az rest \
+  --method PATCH \
+  --uri "https://graph.microsoft.com/v1.0/applications/$(az ad app list --display-name $applicationName --query [0].id -o tsv)" \
+  --headers 'Content-Type=application/json' \
+  --body '{"web":{"implicitGrantSettings":{"enableIdTokenIssuance":true},"logoutUrl": "https://localhost:5001/signout-oidc","redirectUris":["https://localhost:5001/signin-oidc","https://localhost:5001/"]}}' \
+  --verbose
+
+### Using PowerShell and new Microsoft Graph API PowerShell modules
+## Install Microsoft Graph PowerShell module
+# Check current powershell execution policy
+Get-ExecutionPolicy
+# If too restricted set to RemoteSigned
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+# Install new Microsoft.Graph modules
+Install-Module Microsoft.Graph -Scope CurrentUser
+# Verify installation
+Get-InstalledModule Microsoft.Graph*
+## Connect to Azure AD
+Connect-MgGraph -TenantId <tenant-id>
+# Get one of the domains for your tenant
+$aadDomainName=((Get-MgOrganization).VerifiedDomains)[0].Name
+# Create new user
+$passwordProfile=@{"ForceChangePasswordNextSignIn"=$false;"Password"='Pa55w.rd1234'}
+New-MgUser `
+  -AccountEnabled `
+  -DisplayName 'aad_lab_user1' `
+  -PasswordProfile $passwordProfile `
+  -MailNickName 'aad_lab_user1' `
+  -UserPrincipalName "aad_lab_user1@$aadDomainName"
+# If getting errors about required permissions, check required permissions for command
+Find-MgGraphCommand -command New-MgUser | Select -First 1 -ExpandProperty Permissions
+# And reconnect using required permissions
+Connect-MgGraph -UseDeviceAuthentication -TenantId <tenant-id> -Scopes User.ReadWrite.All
+# Get user principal name (UPN)
+$user1Principal=(Get-MgUser -Filter "MailNickName eq 'aad_lab_user1'").UserPrincipalName
+
+# Create asp.net application with authentication based on your registered Azure AD application
+dotnet new mvc --auth SingleOrg --client-id <application-id> --tenant-id <tenant-id> --domain <tenant-domain>
+rmdir -Force -r ./obj
