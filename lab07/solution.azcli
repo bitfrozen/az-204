@@ -41,9 +41,10 @@ az functionapp create --name $func \
 # Create system-assigned managed service identity for function app
 az functionapp identity assign --identities [system] --name $func --resource-group $group
 # Save storage account connection string as a secret
+connectstring=$(az storage account show-connection-string --name $storage --query connectionString)
 az keyvault secret set --name $secretname \
   --vault-name $keyvault \
-  --value "$(az storage account show-connection-string --name $storage --query connectionString)"
+  --value $connectstring
 # Get secret identifier for current version of secret
 az keyvault secret show --name $secretname --vault-name $keyvault --query id
 # Get function app system managed identity id
