@@ -1,0 +1,84 @@
+# Set bash variables
+location="eastus2" &&
+group="ConfidentialStack" &&
+storage="securestor3344" &&
+keyvault="securevault3344" &&
+secretname="storagecredentials" &&
+func="securefunc3344" &&
+container="drop"
+
+# Set powershell variables
+$location="eastus2";
+$group="ConfidentialStack";
+$storage="securestor3344";
+$keyvault="securevault3344";
+$func="securefunc3344";
+$container="drop";
+
+# Create resource group
+az group create --name $group --location $location
+# Create storage account
+az storage account create --name $storage \
+  --resource-group $group \
+  --sku Standard_LRS \
+  --https-only \
+  --kind StorageV2 \
+  --min-tls-version TLS1_2
+# Get connection string for storage account
+az storage account show-connection-string --name $storage
+# Create key vault
+ az keyvault create --name $keyvault --resource-group $group --sku standard --enable-soft-delete false
+# Create function app
+az functionapp create --name $func \
+  --resource-group $group \
+  --consumption-plan-location $location \
+  --disable-app-insights \
+  --functions-version 4 \
+  --os-type Linux \
+  --runtime dotnet \
+  --runtime-version 6 \
+  --storage-account $storage
+# Create system-assigned managed service identity for function app
+az functionapp identity assign --identities [system] --name $func --resource-group $group
+# Save storage account connection string as a secret
+az keyvault secret set --name $secretname \
+  --vault-name $keyvault \
+  --value "$(az storage account show-connection-string --name $storage --query connectionString)"
+# Get secret identifier for current version of secret
+az keyvault secret show --name $secretname --vault-name $keyvault --query id
+# Get function app system managed identity id
+az resource list --name $func --resource-group $group --query [0].identity.principalId -o tsv
+# Assign read permission on keyvault secret for function app mamanged identity
+az keyvault set-policy --name $keyvault \
+  --secret-permissions get \
+  --object-id "$(az resource list --name $func --resource-group $group --query [0].identity.principalId -o tsv)"
+# Save keyvault based connection string inside function application settings
+az functionapp config appsettings set --name $func \
+  --resource-group $group \
+  --settings StorageConnectionString="@Microsoft.KeyVault(SecretUri=$(az keyvault secret show --name $secretname --vault-name $keyvault --query id -o tsv))"
+# Create function app dotnet project
+func init --worker-runtime dotnet --force
+dotnet build
+func new --template "HTTP trigger" --name "FileParser"
+# Run function app project locally
+func start --build
+httprepl http://localhost:7071
+cd api/fileparser
+get
+exit
+# Publish function to Azure
+func azure functionapp publish $func
+# Test function app
+functionkey=$(az functionapp function keys list --name $func --resource-group $group --function-name FileParser --query default -o tsv)
+httprepl https://$func.azurewebsites.net
+set header x-functions-key "$functionkey"
+get api/fileparser
+exit
+# Create storage container
+az storage container create --account-name $storage --resource-group $group --name $container --public-access blob
+# Upload file to container
+az storage blob upload --account-name $storage --container-name $container --overwrite --file records.json
+# Change container access level to private
+az storage container set-permission --account-name $storage --name $container --public-access off
+# Remove resource group with resources
+az group delete --name $group --location $location -yes
