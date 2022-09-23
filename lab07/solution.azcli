@@ -81,4 +81,4 @@ az storage blob upload --account-name $storage --container-name $container --ove
 # Change container access level to private
 az storage container set-permission --account-name $storage --name $container --public-access off
 # Remove resource group with resources
-az group delete --name $group --location $location -yes
+az group delete --name $group --yes
