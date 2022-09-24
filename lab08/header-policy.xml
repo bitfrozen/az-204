@@ -1,0 +1,18 @@
+<policies>
+  <inbound>
+      <base />
+      <set-header name="source" exists-action="append">
+          <value>azure-api-mgmt</value>
+      </set-header>
+      <set-backend-service base-url="https://httpapi3344.azurewebsites.net/headers" />
+  </inbound>
+  <backend>
+      <base />
+  </backend>
+  <outbound>
+      <base />
+  </outbound>
+  <on-error>
+      <base />
+  </on-error>
+</policies>

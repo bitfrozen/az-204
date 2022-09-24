@@ -1,0 +1,127 @@
+# Set bash variables
+location="eastus2" &&
+group="ApiService" &&
+appservplan="plan3344" &&
+appserv="httpapi3344" &&
+apiserv="proapi3344" &&
+apiend="httpbin-api" &&
+apiop1="echo-headers" &&
+apiop2="get-legacy-data" &&
+apiop3="modify-status-code"
+
+# Set powershell variables
+$location="eastus2";
+$group="ApiService";
+$appservplan="plan3344";
+$appserv="httpapi3344";
+$apiserv="proapi3344";
+$apiend="httpbin-api";
+$apiop1="echo-headers";
+$apiop2="get-legacy-data";
+$apiop3="modify-status-code";
+
+# Create resource group
+az group create --name $group --location $location
+
+# Create container based app service web app
+az appservice plan create --name $appservplan \
+  --resource-group $group \
+  --is-linux \
+  --sku F1 \
+  --number-of-workers 1 \
+  --per-site-scaling
+az webapp create --name $appserv \
+  --resource-group $group \
+  --plan $appservplan \
+  --deployment-container-image-name "kennethreitz/httpbin:latest" \
+  --https-only
+
+# Get web app hostname
+webappurl=$(az webapp show --name $appserv --resource-group $group --query defaultHostName -o tsv)
+# Test web app
+curl -X GET -H "accept: text/plain" -i "https://$webappurl/get"
+curl -X GET -H "accept: text/plain" -i "https://$webappurl/html"
+curl -X GET -H "accept: text/plain" -i "https://$webappurl/bytes/25"
+curl -X GET -H "accept: text/plain" -i "https://$webappurl/status/418"
+
+# Create api management service
+az apim create --name $apiserv \
+  --resource-group $group \
+  --publisher-name "Contoso" \
+  --publisher-email "admin@contoso.com" \
+  --sku-name Consumption
+
+# Create api endpoint
+az apim api create --api-id $apiend \
+  --service-name $apiserv \
+  --resource-group $group \
+  --display-name "HTTPBin API" \
+  --api-type http \
+  --path "" \
+  --protocols https \
+  --service-url "https://$webappurl"
+
+# Create api endpoint operation
+az apim api operation create --api-id $apiend \
+  --service-name $apiserv \
+  --resource-group $group \
+  --operation-id $apiop1 \
+  --display-name "Echo Headers" \
+  --method GET \
+  --url-template "/"
+
+# For working with operation policies switch to PowerShell, since Azure CLI does not implement this function
+# Apply policy which will add additional header and change backend url
+$apimContext=New-AzApiManagementContext -ResourceGroupName $group -ServiceName $apiserv
+Set-AzApiManagementPolicy -Context $apimContext `
+  -ApiId $apiend `
+  -OperationId $apiop1 `
+  -PolicyFilePath (Resolve-Path -LiteralPath .\header-policy.xml)
+
+# Test api service operation
+gatewayurl=$(az apim show --name $apiserv --resource-group $group --query gatewayUrl -o tsv)
+curl -X GET -H "accept: text/plain" -i $gatewayurl
+
+# Create another api endpoint operation
+az apim api operation create --api-id $apiend \
+  --service-name $apiserv \
+  --resource-group $group \
+  --operation-id $apiop2 \
+  --display-name "Get Legacy Data" \
+  --method GET \
+  --url-template "/xml"
+
+# Test api service operation
+curl -X GET -H "accept: text/plain" -i "$gatewayurl/xml"
+
+# Modify api service operation policy
+$apimContext=New-AzApiManagementContext -ResourceGroupName $group -ServiceName $apiserv
+Set-AzApiManagementPolicy -Context $apimContext `
+  -ApiId $apiend `
+  -OperationId $apiop2 `
+  -PolicyFilePath (Resolve-Path -LiteralPath .\outbound-policy.xml)
+
+# Test api service operation with new policy
+curl -X GET -H "accept: text/plain" -i "$gatewayurl/xml"
+
+# Create another api endpoint operation
+az apim api operation create --api-id $apiend \
+  --service-name $apiserv \
+  --resource-group $group \
+  --operation-id $apiop3 \
+  --display-name "Modify Status Code" \
+  --method GET \
+  --url-template "/status/404"
+
+# Modify api service operation policy
+$apimContext=New-AzApiManagementContext -ResourceGroupName $group -ServiceName $apiserv
+Set-AzApiManagementPolicy -Context $apimContext `
+  -ApiId $apiend `
+  -OperationId $apiop3 `
+  -PolicyFilePath (Resolve-Path -LiteralPath .\url-policy.xml)
+
+# Test api service operation with new policy
+curl -X GET -H "accept: text/plain" -i "$gatewayurl/status/404"
+
+# Remove resource group with resources
+az group delete --name $group --yes
