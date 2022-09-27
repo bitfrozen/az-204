@@ -1,0 +1,70 @@
+# Set bash variables
+location="eastus2" &&
+group="PubSubEvents" &&
+topicname="hrtopic3344" &&
+viewerappplan="EventPlan" &&
+viewerappname="eventviewercdk3344" &&
+subbasic="basicsub"
+
+
+# Set powershell variables
+$location="eastus2";
+$group="PubSubEvents";
+$topicname="hrtopic3344";
+$viewerappplan="EventPlan";
+$viewerappname="eventviewercdk3344";
+$subbasic="basicsub";
+
+
+# Create resource group
+az group create --name $group --location $location
+
+# Check state of EventGrid provider
+az provider list --query "[?namespace=='Microsoft.EventGrid']" -o table
+
+# Create EventGrid topic
+az eventgrid topic create --name $topicname \
+  --resource-group $group \
+  --location $location \
+  --sku basic \
+  --input-schema eventgridschema
+
+# Create event viewer app
+az appservice plan create --name $viewerappplan \
+  --resource-group $group \
+  --is-linux \
+  --number-of-workers 1 \
+  --sku F1
+az webapp create --name $viewerappname \
+  --resource-group $group \
+  --plan $viewerappplan \
+  --https-only \
+  --deployment-container-image-name 'microsoftlearning/azure-event-grid-viewer'
+viewerappurl="https://$(az webapp show --name $viewerappname --resource-group $group --query defaultHostName -o tsv)/api/updates"
+topicid=$(az eventgrid topic show --name $topicname --resource-group $group --query id -o tsv)
+
+# Create event grid topic subscription to event viewer app
+az eventgrid event-subscription create --name $subbasic \
+  --source-resource-id $topicid \
+  --event-delivery-schema eventgridschema \
+  --endpoint-type webhook \
+  --endpoint $viewerappurl
+
+topicendpoint=$(https://hrtopic3344.eastus2-1.eventgrid.azure.net/api/events)
+topickey=$(az eventgrid topic key list --name $topicname --resource-group $group --query key1 -o tsv)
+
+# Create event publisher application
+dotnet new console --framework net6.0 --name EventPublisher --output .
+dotnet build
+
+dotnet user-secrets init
+dotnet user-secrets set "TopicEndpoint" $topicendpoint
+dotnet user-secrets set "TopicKey" $topickey
+
+dotnet run
+
+curl -i "https://$(az webapp show --name $viewerappname --resource-group $group --query defaultHostName -o tsv)"
+
+
+# Remove resource group with resources
+az group delete --name $group --yes
