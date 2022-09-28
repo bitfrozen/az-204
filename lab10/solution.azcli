@@ -1,0 +1,59 @@
+# Set bash variables
+location="eastus2" &&
+group="AsyncProcessor" &&
+servicebusname="sbnamespace3344" &&
+servicebusqueue="messagequeue"
+
+
+# Set powershell variables
+$location="eastus2";
+$group="AsyncProcessor";
+$servicebusname="sbnamespace3344";
+$servicebusqueue="messagequeue";
+
+
+# Create resource group
+az group create --name $group --location $location
+
+# Create service bus
+az servicebus namespace create --name $servicebusname \
+  --resource-group $group \
+  --sku Basic
+servicebusaccessname=$(az servicebus namespace authorization-rule list \
+                        --name $servicebusname \
+                        --resource-group $group \
+                        --query [0].name -o tsv)
+servicebusconnection=$(az servicebus namespace authorization-rule keys list \
+                        --name $servicebusaccessname \
+                        --namespace-name $servicebusname \
+                        --resource-group $group \
+                        --query primaryConnectionString -o tsv)
+az servicebus queue create --name $servicebusqueue \
+  --namespace-name $servicebusname \
+  --resource-group $group
+
+# Create publisher app
+dotnet new console --framework net6.0 --name MessagePublisher --output .
+dotnet add .\MessagePublisher.csproj package Azure.Messaging.ServiceBus
+dotnet add .\MessagePublisher.csproj package Microsoft.Extensions.Configuration
+dotnet add .\MessagePublisher.csproj package Microsoft.Extensions.Configuration.Json
+dotnet add .\MessagePublisher.csproj package Microsoft.Extensions.Configuration.UserSecrets
+dotnet user-secrets init
+dotnet user-secrets set "StorageConnectionString" $servicebusconnection
+dotnet build
+dotnet run
+
+# Create reader app
+dotnet new console --framework net6.0 --name MessageReader --output .
+dotnet add .\MessageReader.csproj package Azure.Messaging.ServiceBus
+dotnet add .\MessageReader.csproj package Microsoft.Extensions.Configuration
+dotnet add .\MessageReader.csproj package Microsoft.Extensions.Configuration.Json
+dotnet add .\MessageReader.csproj package Microsoft.Extensions.Configuration.UserSecrets
+dotnet user-secrets init
+dotnet user-secrets set "StorageConnectionString" $servicebusconnection
+dotnet build
+dotnet run
+
+# Cleanup
+dotnet user-secrets clear
+az group delete --name $group --yes
