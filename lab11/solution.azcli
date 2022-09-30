@@ -1,0 +1,80 @@
+# Set bash variables
+location="eastus2" &&
+group="MonitoredAssets" &&
+workspacename="workspace3344" &&
+insightname="instrm3344" &&
+webappplan="smpapiplan" &&
+webappname="smpapi3344"
+
+# Set powershell variables
+$location="eastus2";
+$group="MonitoredAssets";
+$workspacename="workspace3344";
+$insightname="instrm3344";
+$webappplan="smpapiplan";
+$webappname="smpapi3344";
+
+
+# Create resource group
+az group create --name $group --location $location
+
+# Create log analytics workspace
+az monitor log-analytics workspace create \
+  --workspace-name "workspace3344" \
+  --resource-group $group \
+  --sku PerGB2018
+workspaceid=$(az monitor log-analytics workspace show \
+                --workspace-name "workspace3344" \
+                --resource-group $group \
+                --query id \
+                -o tsv)
+
+# Create application insights app
+az monitor app-insights component create \
+  --app $insightname \
+  --location $location \
+  --resource-group $group \
+  --workspace $workspaceid
+instrumentationkey=$(az monitor app-insights component show \
+                      --app $insightname \
+                      --resource-group $group \
+                      --query instrumentationKey \
+                      -o tsv)
+
+# Create webapp
+az appservice plan create --name $webappplan \
+  --resource-group $group \
+  --is-linux \
+  --number-of-workers 1 \
+  --per-site-scaling \
+  --sku F1
+az webapp create --name $webappname \
+  --resource-group $group \
+  --plan $webappplan \
+  --https-only \
+  --runtime "DOTNETCORE:6.0"
+
+# Link application insights with webapp
+az webapp config appsettings set --name $webappname \
+  --resource-group $group \
+  --settings APPINSIGHTS_INSTRUMENTATIONKEY=$instrumentationkey \
+    APPLICATIONINSIGHTS_CONNECTION_STRING=InstrumentationKey=$instrumentationkey \
+    ApplicationInsightsAgent_EXTENSION_VERSION=~2
+
+# Create webapp application
+dotnet new webapi --output . --name SimpleApi --framework net6.0
+dotnet add package Microsoft.ApplicationInsights
+dotnet add package Microsoft.ApplicationInsights.AspNetCore
+dotnet add package Microsoft.ApplicationInsights.PerfCounterCollector
+dotnet add package Microsoft.ApplicationInsights.Profiler.AspNetCore
+dotnet add package Microsoft.Extensions.Logging.ApplicationInsights
+dotnet user-secrets init
+dotnet user-secrets set "ApplicationInsights:InstrumentationKey" "$instrumentationkey"
+dotnet build
+dotnet publish --configuration Release --output ./deploy --self-contained false --runtime linux-x64
+Compress-Archive .\deploy\* -DestinationPath .\deploy.zip
+az webapp deployment source config-zip --name $webappname --resource-group $group --src deploy.zip
+
+# Cleanup
+dotnet user-secrets clear
+az group delete --name $group --yes
