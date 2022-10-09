@@ -1,0 +1,222 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "cdnprofilename": {
+      "type": "string"
+    },
+    "mediaendpointname": {
+      "type": "string"
+    },
+    "videoendpointname": {
+      "type": "string"
+    },
+    "webendpointname": {
+      "type": "string"
+    },
+    "storagehostname": {
+      "type": "string"
+    },
+    "webhostname": {
+      "type": "string"
+    },
+    "mediacontainername": {
+      "type": "string"
+    },
+    "videocontainername": {
+      "type": "string"
+    }
+  },
+  "functions": [],
+  "variables": {
+    "location": "[resourceGroup().location]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Cdn/profiles",
+      "apiVersion": "2021-06-01",
+      "name": "[parameters('cdnprofilename')]",
+      "location": "[variables('location')]",
+      "sku": {
+        "name": "Standard_Microsoft"
+      },
+      "kind": "cdn"
+    },
+    {
+      "type": "Microsoft.Cdn/profiles/endpoints",
+      "apiVersion": "2021-06-01",
+      "name": "[format('{0}/{1}', parameters('cdnprofilename'), parameters('mediaendpointname'))]",
+      "location": "global",
+      "dependsOn": [
+        "[resourceId('Microsoft.Cdn/profiles', parameters('cdnprofilename'))]"
+      ],
+      "properties": {
+        "originPath": "[concat('/', parameters('mediacontainername'))]",
+        "originHostHeader": "[parameters('storagehostname')]",
+        "origins": [
+          {
+            "name": "origin-0",
+            "properties": {
+              "hostName": "[parameters('storagehostname')]",
+              "httpPort": 80,
+              "httpsPort": 443,
+              "enabled": true
+            }
+          }
+        ],
+        "isCompressionEnabled": true,
+        "isHttpAllowed": true,
+        "isHttpsAllowed": true,
+        "queryStringCachingBehavior": "IgnoreQueryString",
+        "optimizationType": "GeneralWebDelivery",
+        "contentTypesToCompress": [
+          "application/eot",
+          "application/font",
+          "application/font-sfnt",
+          "application/javascript",
+          "application/json",
+          "application/opentype",
+          "application/otf",
+          "application/pkcs7-mime",
+          "application/truetype",
+          "application/ttf",
+          "application/vnd.ms-fontobject",
+          "application/xhtml+xml",
+          "application/xml",
+          "application/xml+rss",
+          "application/x-font-opentype",
+          "application/x-font-truetype",
+          "application/x-font-ttf",
+          "application/x-httpd-cgi",
+          "application/x-javascript",
+          "application/x-mpegurl",
+          "application/x-opentype",
+          "application/x-otf",
+          "application/x-perl",
+          "application/x-ttf",
+          "font/eot",
+          "font/ttf",
+          "font/otf",
+          "font/opentype",
+          "image/svg+xml",
+          "text/css",
+          "text/csv",
+          "text/html",
+          "text/javascript",
+          "text/js",
+          "text/plain",
+          "text/richtext",
+          "text/tab-separated-values",
+          "text/xml",
+          "text/x-script",
+          "text/x-component",
+          "text/x-java-source"
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Cdn/profiles/endpoints",
+      "apiVersion": "2021-06-01",
+      "name": "[format('{0}/{1}', parameters('cdnprofilename'), parameters('videoendpointname'))]",
+      "location": "global",
+      "dependsOn": [
+        "[resourceId('Microsoft.Cdn/profiles', parameters('cdnprofilename'))]"
+      ],
+      "properties": {
+        "originPath": "[concat('/', parameters('videocontainername'))]",
+        "originHostHeader": "[parameters('storagehostname')]",
+        "origins": [
+          {
+            "name": "origin-0",
+            "properties": {
+              "hostName": "[parameters('storagehostname')]",
+              "httpPort": 80,
+              "httpsPort": 443,
+              "enabled": true
+            }
+          }
+        ],
+        "isCompressionEnabled": true,
+        "isHttpAllowed": true,
+        "isHttpsAllowed": true,
+        "queryStringCachingBehavior": "IgnoreQueryString",
+        "optimizationType": "GeneralWebDelivery",
+        "contentTypesToCompress": [
+          "application/x-mpegurl"
+        ]
+      }
+    },
+        {
+      "type": "Microsoft.Cdn/profiles/endpoints",
+      "apiVersion": "2021-06-01",
+      "name": "[format('{0}/{1}', parameters('cdnprofilename'), parameters('webendpointname'))]",
+      "location": "global",
+      "dependsOn": [
+        "[resourceId('Microsoft.Cdn/profiles', parameters('cdnprofilename'))]"
+      ],
+      "properties": {
+        "originHostHeader": "[parameters('webhostname')]",
+        "origins": [
+          {
+            "name": "origin-0",
+            "properties": {
+              "hostName": "[parameters('webhostname')]",
+              "httpPort": 80,
+              "httpsPort": 443,
+              "enabled": true
+            }
+          }
+        ],
+        "isCompressionEnabled": true,
+        "isHttpAllowed": true,
+        "isHttpsAllowed": true,
+        "queryStringCachingBehavior": "IgnoreQueryString",
+        "optimizationType": "GeneralWebDelivery",
+        "contentTypesToCompress": [
+          "application/eot",
+          "application/font",
+          "application/font-sfnt",
+          "application/javascript",
+          "application/json",
+          "application/opentype",
+          "application/otf",
+          "application/pkcs7-mime",
+          "application/truetype",
+          "application/ttf",
+          "application/vnd.ms-fontobject",
+          "application/xhtml+xml",
+          "application/xml",
+          "application/xml+rss",
+          "application/x-font-opentype",
+          "application/x-font-truetype",
+          "application/x-font-ttf",
+          "application/x-httpd-cgi",
+          "application/x-javascript",
+          "application/x-mpegurl",
+          "application/x-opentype",
+          "application/x-otf",
+          "application/x-perl",
+          "application/x-ttf",
+          "font/eot",
+          "font/ttf",
+          "font/otf",
+          "font/opentype",
+          "image/svg+xml",
+          "text/css",
+          "text/csv",
+          "text/html",
+          "text/javascript",
+          "text/js",
+          "text/plain",
+          "text/richtext",
+          "text/tab-separated-values",
+          "text/xml",
+          "text/x-script",
+          "text/x-component",
+          "text/x-java-source"
+        ]
+      }
+    }
+  ],
+  "outputs": {}
+}

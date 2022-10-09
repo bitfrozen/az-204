@@ -1,0 +1,153 @@
+# Set bash variables
+location="eastus2" &&
+group="MarketingContent" &&
+storagename="contenthost3344" &&
+container1name="media" &&
+container2name="video" &&
+cdnprofilename="contentdeliverynetowork" &&
+cdnendpoint1="cdnmedia3344" &&
+cdnendpoint2="cdnvideo3344" &&
+cdnendpoint3="cdnweb3344" &&
+webappplan="landingpageplan" &&
+webappname="landingpage3344"
+
+# Set powershell variables
+$location="eastus2";
+$group="MarketingContent";
+$storagename="contenthost3344";
+$container1name="media";
+$container2name="video";
+$cdnprofilename="contentdeliverynetowork";
+$cdnendpoint1="cdnmedia3344";
+$cdnendpoint2="cdnvideo3344";
+$cdnendpoint3="cdnweb3344";
+$webappplan="landingpageplan";
+$webappname="landingpage3344";
+
+# Create resource group
+az group create --name $group --location $location
+
+# Create storage account
+az storage account create \
+  --name $storagename \
+  --resource-group $group \
+  --https-only \
+  --kind StorageV2 \
+  --min-tls-version TLS1_2 \
+  --sku Standard_LRS
+
+storageendpoint=$(az storage account show \
+                    --name $storagename \
+                    --resource-group $group \
+                    --query primaryEndpoints.blob -o tsv)
+
+cleanendpoint=$(sed 's|.*//\(.*\)/|\1|' <<<$storageendpoint)
+
+# Create container based webapp
+az appservice plan create \
+  --name $webappplan \
+  --resource-group $group \
+  --is-linux \
+  --sku F1
+
+az webapp create \
+  --name $webappname \
+  --resource-group $group \
+  --plan $webappplan \
+  --deployment-container-image-name "microsoftlearning/edx-html-landing-page:latest" \
+  --https-only
+
+webapphostname=$(az webapp show --name $webappname \
+                  --resource-group $group \
+                  --query defaultHostName -o tsv)
+
+# Check CDN provider status and register if not already registered
+az provider list -o tsv --query "[?namespace=='Microsoft.Cdn'].registrationState"
+
+az provider register --namespace Microsoft.Cdn
+
+az provider show -n Microsoft.Cdn --query registrationState
+
+# Create storage for CDN
+az storage container create \
+  --name $container1name \
+  --account-name $storagename \
+  --resource-group $group \
+  --public-access blob
+
+az storage container create \
+  --name $container2name \
+  --account-name $storagename \
+  --resource-group $group \
+  --public-access blob
+
+# Since CDN endpoints created over Azure CLI don't work (could not find reason why)
+# Use ARM template to create CDN profile and endpoints
+az deployment group create --resource-group $group \
+  --template-file endpoints.json \
+  --mode Incremental \
+  --confirm-with-what-if \
+  --parameters  cdnprofilename=$cdnprofilename \
+                mediaendpointname=$cdnendpoint1 \
+                videoendpointname=$cdnendpoint2 \
+                webendpointname=$cdnendpoint3 \
+                storagehostname=$cleanendpoint \
+                webhostname=$webapphostname \
+                mediacontainername=$container1name \
+                videocontainername=$container2name
+
+# Upload content
+az storage blob upload-batch \
+  --account-name $storagename \
+  --destination $container1name \
+  --source . \
+  --pattern '*.jpg' \
+  --overwrite
+
+az storage blob upload-batch \
+  --account-name $storagename \
+  --destination $container2name \
+  --source . \
+  --pattern '*.mp4' \
+  --overwrite
+
+# Set webapp configuration to use storage account for content storage
+az webapp config appsettings set \
+  --name $webappname \
+  --resource-group $group \
+  --settings CDNMediaEndpoint="$storageendpoint$container1name" CDNVideoEndpoint="$storageendpoint$container2name"
+
+az webapp restart --name $webappname --resource-group $group
+
+# Get endpoint hostnames for CDN
+cdnendpoint1url=https://$(az cdn endpoint show  --name $cdnendpoint1 \
+                                                --profile-name $cdnprofilename \
+                                                --resource-group $group \
+                                                --query hostName \
+                                                -o tsv)
+
+cdnendpoint2url=https://$(az cdn endpoint show  --name $cdnendpoint2 \
+                                                --profile-name $cdnprofilename \
+                                                --resource-group $group \
+                                                --query hostName \
+                                                -o tsv)
+
+cdnendpoint3url=https://$(az cdn endpoint show  --name $cdnendpoint3 \
+                                                --profile-name $cdnprofilename \
+                                                --resource-group $group \
+                                                --query hostName \
+                                                -o tsv)
+
+# Set webapp configuration to use CDN for content storage
+ az webapp config appsettings set \
+  --name $webappname \
+  --resource-group $group \
+  --settings CDNMediaEndpoint=$cdnendpoint1url CDNVideoEndpoint=$cdnendpoint2url
+
+az webapp restart --name $webappname --resource-group $group
+
+# Check webapp itself access over CDN
+curl -i $cdnendpoint3url
+
+# Cleanup
+az group delete --name $group --yes
