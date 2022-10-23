@@ -1,0 +1,24 @@
+location="eastus2" &&
+group="lb-example"
+
+# Create resource group
+az group create --name $group --location $location
+# Deploy ARM template
+az deployment group create --name lb-deploy-01 --template-file group-template.json --resource-group $group --mode Complete
+
+# Create web app
+dotnet new razor --exclude-launch-settings true --use-program-main true --output .\webapp
+# Modify project to include healthcheck (for load balancer)
+dotnet publish --runtime "ubuntu.18.04-x64" --configuration Release --output .\prod --self-contained
+
+# Setup domain and acquire SSL certificate (for example Let's encrypt or ZeroSSL)
+# Look up load balancer public IP and setup A record on domain to point to load balancer
+
+# Use vm3-bastion to tunnel into vm1 and vm2 to upload webapp project
+# Setup webapp executable
+chmod u+x webapp
+sudo setcap 'cap_net_bind_service=+eip' webapp
+
+
+# Cleanup
+az group delete --name $group --yes
