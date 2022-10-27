@@ -7,3 +7,5 @@ arm-advanced/azuredeploy-depend.parameters.json
 *.zip
 *.DotSettings.user
 /Labs/
+funcfunc/funcapp/Properties/PublishProfiles/func2func - Zip Deploy.pubxml
+*.csproj.user

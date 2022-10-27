@@ -1,0 +1,6 @@
+group="funcfunc"
+location="eastus2"
+
+az group create --name $group --location $location
+
+az group delete --name $group --yes
