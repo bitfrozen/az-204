@@ -1,0 +1,37 @@
+group="auth-sdk" \
+location="eastus2" \
+appname="dotnet-sdk-auth-cli"
+
+# Create self signed certificate for service principal authentication (using smallsteps cli for certificate management)
+# Certificate is valid for 720 hours
+# Using RSA certificate since EC didn't work
+step certificate create AzureAuthDemo.selfsigned authdemo.crt authdemo.key --profile self-signed --subtle --no-password --insecure --not-after 720h --kty RSA --size 2048
+# Combine both certificate and key into PFX file (Azure Identity SDK supports only PFX or PEM files for client authentication). PFX file also can't be password protected. =(
+step certificate p12 --no-password --insecure authdemo.pfx authdemo.crt authdemo.key
+
+# Create resource group and get its ID
+az group create --location $location --name $group
+groupId=$(az group show --name $group --query id -o tsv)
+
+# Create service principal for VM management inside resource group (using created certificate for authentication)
+az ad sp create-for-rbac --name $appname --role "Virtual Machine Contributor" --scopes "$groupId" --cert "@authdemo.crt"
+spId=$(az ad sp list --display-name $appname --query [0].id -o tsv)
+appId=$(az ad sp show --id $spId --query appId -o tsv)
+az role assignment create --role "Network Contributor" --assignee-object-id $spId  --assignee-principal-type ServicePrincipal --scope $groupId
+
+# Create dotnet console application
+dotnet new solution --name AuthOnPremises
+dotnet new console --name VMAdmin
+dotnet sln add VMAdmin
+dotnet add VMAdmin package Microsoft.Extensions.Configuration
+dotnet add VMAdmin package Microsoft.Extensions.Configuration.Json
+dotnet add VMAdmin package Microsoft.Extensions.Configuration.Binder
+dotnet add VMAdmin package Azure.Identity
+dotnet add VMAdmin package Azure.ResourceManager
+dotnet add VMAdmin package Azure.ResourceManager.Network
+dotnet add VMAdmin package Azure.ResourceManager.Compute
+
+# Cleanup
+az group delete --name $group --yes
+az ad sp delete --id $spId
+az ad app delete --id $appId
